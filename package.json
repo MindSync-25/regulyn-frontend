@@ -1,0 +1,19 @@
+{
+  "name": "regulyn-frontend",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Regulyn Frontend Mono-repo",
+  "scripts": {
+    "dev:admin": "pnpm --filter admin-portal dev",
+    "dev:principal": "pnpm --filter data-principal-portal dev",
+    "dev:widget": "pnpm --filter consent-widget dev",
+    "build:admin": "pnpm --filter admin-portal build",
+    "build:principal": "pnpm --filter data-principal-portal build",
+    "build:widget": "pnpm --filter consent-widget build",
+    "build": "pnpm -r build"
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  }
+}
