@@ -25,6 +25,11 @@ import DeletionsListPage from '@/pages/retention/DeletionsListPage';
 import DeletionDetailPage from '@/pages/retention/DeletionDetailPage';
 import ConnectorsListPage from '@/pages/retention/ConnectorsListPage';
 import ConnectorDetailPage from '@/pages/retention/ConnectorDetailPage';
+import { NoticeTemplatesListPage } from '@/pages/consent/NoticeTemplatesListPage';
+import { NoticeTemplateDetailPage } from '@/pages/consent/NoticeTemplateDetailPage';
+import { PurposesHistoryPage } from '@/pages/consent/PurposesHistoryPage';
+import { ReconsentDashboardPage } from '@/pages/consent/ReconsentDashboardPage';
+import { CommunicationLedgerPage } from '@/pages/consent/CommunicationLedgerPage';
 import { ROLES } from '@/lib/auth/roles';
 
 /**
@@ -88,20 +93,52 @@ export const router = createBrowserRouter([
       // Consent Management
       {
         path: 'consent',
-        element: (
-          <RoleGuard
-            allowedRoles={[
-              ROLES.TENANT_ADMIN,
-              ROLES.DPO,
-              ROLES.OPERATOR,
-            ]}
-          >
-            <ModulePlaceholderPage
-              moduleName="Consent Management"
-              description="Manage consent records and preferences"
-            />
-          </RoleGuard>
-        ),
+        children: [
+          {
+            index: true,
+            element: <Navigate to="/consent/notices" replace />,
+          },
+          {
+            path: 'notices',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR]}>
+                <NoticeTemplatesListPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'notices/:templateId',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR]}>
+                <NoticeTemplateDetailPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'ledger',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR]}>
+                <CommunicationLedgerPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'purposes',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR]}>
+                <PurposesHistoryPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'reconsent',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR]}>
+                <ReconsentDashboardPage />
+              </RoleGuard>
+            ),
+          },
+        ],
       },
       
       // DSAR (Data Subject Access Requests)

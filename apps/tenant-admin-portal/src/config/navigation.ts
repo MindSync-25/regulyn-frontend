@@ -38,6 +38,28 @@ export const navigationConfig: NavItem[] = [
       ROLES.DPO,
       ROLES.OPERATOR,
     ],
+    children: [
+      {
+        label: 'Notices',
+        path: '/consent/notices',
+        allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR],
+      },
+      {
+        label: 'Ledger',
+        path: '/consent/ledger',
+        allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR],
+      },
+      {
+        label: 'Purposes',
+        path: '/consent/purposes',
+        allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR],
+      },
+      {
+        label: 'Re-consent',
+        path: '/consent/reconsent',
+        allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR],
+      },
+    ],
   },
   {
     label: 'DSAR',

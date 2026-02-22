@@ -7,9 +7,9 @@
 
 import { useAuthStore } from '@/store/authStore';
 import { http } from './http';
+import { env } from '@/config/env';
 
-// Evidence service base URL (hardcoded for now - TODO: move to env config)
-const EVIDENCE_API_BASE = 'http://localhost:8095';
+const EVIDENCE_API_BASE = env.evidenceServiceUrl;
 
 /**
  * Evidence-specific HTTP client with auth/tenant injection

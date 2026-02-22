@@ -15,11 +15,18 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const tenantName = useAuthStore((state) => state.tenantName);
   const visibleNavItems = getVisibleNavItems(userRoles);
 
+  const isAllowed = (allowedRoles?: string[]) => {
+    if (!allowedRoles || allowedRoles.length === 0) return true;
+    return allowedRoles.some((role) => userRoles.includes(role));
+  };
+
   return (
-    <aside className={cn(
-      "border-r border-border bg-white transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
-    )}>
+    <aside
+      className={cn(
+        "flex h-full flex-col border-r border-border bg-white transition-all duration-300",
+        isCollapsed ? "w-16" : "w-64"
+      )}
+    >
       <div className="flex items-center justify-between border-b border-border p-3">
         {!isCollapsed && (
           <div className="flex-1 min-w-0">
@@ -48,29 +55,59 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </Button>
       </div>
       
-      <nav className="flex-1 space-y-1 p-2">
-        {visibleNavItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            title={isCollapsed ? item.label : undefined}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                isCollapsed && 'justify-center'
-              )
-            }
-          >
-            {isCollapsed ? (
-              <span className="text-base font-semibold">{item.label.charAt(0)}</span>
-            ) : (
-              item.label
-            )}
-          </NavLink>
-        ))}
+      <nav className="flex-1 space-y-1 overflow-y-auto p-2">
+        {visibleNavItems.map((item) => {
+          const visibleChildren = (item.children ?? []).filter((child) =>
+            isAllowed(child.allowedRoles)
+          );
+
+          return (
+            <div key={item.path} className="space-y-1">
+              <NavLink
+                to={item.path}
+                title={isCollapsed ? item.label : undefined}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                    isCollapsed && 'justify-center'
+                  )
+                }
+              >
+                {isCollapsed ? (
+                  <span className="text-base font-semibold">
+                    {item.label.charAt(0)}
+                  </span>
+                ) : (
+                  item.label
+                )}
+              </NavLink>
+
+              {!isCollapsed && visibleChildren.length > 0 && (
+                <div className="ml-3 space-y-1 border-l border-border pl-3">
+                  {visibleChildren.map((child) => (
+                    <NavLink
+                      key={child.path}
+                      to={child.path}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex items-center rounded-md px-3 py-1.5 text-sm transition-colors',
+                          isActive
+                            ? 'bg-accent text-accent-foreground'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        )
+                      }
+                    >
+                      {child.label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
     </aside>
   );

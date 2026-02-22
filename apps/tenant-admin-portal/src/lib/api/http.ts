@@ -2,6 +2,11 @@ import { env } from '@/config/env';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 
+function isUuid(value: string): boolean {
+  // RFC 4122-ish check (accepts any version/variant)
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 /**
  * Normalized API error structure
  */
@@ -114,6 +119,17 @@ function buildHeaders(config?: HttpConfig): HeadersInit {
   if (!config?.skipTenant) {
     const tenantId = authState.tenantId;
     if (tenantId) {
+      if (!isUuid(tenantId)) {
+        const error: ApiError = {
+          status: 401,
+          message:
+            'Invalid tenantId in session. Please log out and sign in again (tenantId must be a UUID).',
+          code: 'TENANT_ID_INVALID',
+          details: { tenantId },
+        };
+        throw error;
+      }
+
       // Enforce tenant header consistency: caller overrides are not allowed.
       const headerTenantId = headers.get('X-Tenant-Id');
       const headerTenantIdCompat = headers.get('X-Tenant-ID');
@@ -135,6 +151,19 @@ function buildHeaders(config?: HttpConfig): HeadersInit {
       // Set BOTH variants (Headers API ensures we don't end up with duplicate merged values).
       headers.set('X-Tenant-Id', tenantId);
       headers.set('X-Tenant-ID', tenantId);
+    } else {
+      // Not authenticated yet, but some flows may explicitly pass a tenant header (e.g. signup).
+      // If neither auth tenant nor explicit header exists, fail fast with a clear message.
+      const explicitTenantId = headers.get('X-Tenant-Id') ?? headers.get('X-Tenant-ID');
+      if (!explicitTenantId) {
+        const error: ApiError = {
+          status: 401,
+          message:
+            'Tenant context is missing (X-Tenant-Id). Please sign in (or sign up) before calling tenant APIs.',
+          code: 'TENANT_CONTEXT_MISSING',
+        };
+        throw error;
+      }
     }
   }
 
@@ -143,6 +172,18 @@ function buildHeaders(config?: HttpConfig): HeadersInit {
   if (!config?.skipAuth) {
     const userId = authState.userId;
     if (userId) {
+      // Best-effort validation (prevents accidentally sending 'null'/'undefined' strings)
+      if (!isUuid(userId)) {
+        const error: ApiError = {
+          status: 401,
+          message:
+            'Invalid userId in session. Please log out and sign in again (userId must be a UUID).',
+          code: 'USER_ID_INVALID',
+          details: { userId },
+        };
+        throw error;
+      }
+
       const headerUserId = headers.get('X-User-Id');
       const headerUserIdCompat = headers.get('X-User-ID');
       if (
@@ -179,6 +220,23 @@ async function request<T>(
   const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
   
   const headers = buildHeaders(config);
+
+  // Dev-only request diagnostics (do NOT log tokens)
+  if (env.isDevelopment) {
+    const h = new Headers(headers);
+    const authHeader = h.get('Authorization');
+    const tenantHeader = h.get('X-Tenant-Id') ?? h.get('X-Tenant-ID');
+    const userHeader = h.get('X-User-Id') ?? h.get('X-User-ID');
+    // eslint-disable-next-line no-console
+    console.info('[http] request', {
+      method: (config?.method ?? 'GET').toUpperCase(),
+      url: fullUrl,
+      hasAuth: Boolean(authHeader),
+      hasTenant: Boolean(tenantHeader),
+      hasUser: Boolean(userHeader),
+      tenantPrefix: tenantHeader ? tenantHeader.slice(0, 8) : null,
+    });
+  }
   
   const response = await fetch(fullUrl, {
     ...config,
