@@ -14,6 +14,8 @@ export interface User {
   firstName: string | null;
   lastName: string | null;
   enabled: boolean;
+  roles: string[];
+  lockedAt: string | null;
 }
 
 export interface CreateUserRequest {
@@ -78,6 +80,18 @@ export interface ApiKey {
   lastUsedAt: string | null;
   createdAt: string;
   revokedAt: string | null;
+}
+
+export interface ApiKeyListItem {
+  apiKeyId: string;
+  keyName: string;
+  prefix: string | null;
+  enabled: boolean;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string | null;
+  keyVersion: number;
 }
 
 export interface ApiKeyCreateRequest {
@@ -148,18 +162,23 @@ export interface PlanLimitsRequest {
 export interface AuditEvent {
   eventId: string;
   tenantId: string;
-  userId: string | null;
-  eventType: string;
-  timestamp: string;
-  details: Record<string, unknown>;
+  occurredAt: string;
+  actorId: string | null;
+  actorType: string | null;
+  service: string | null;
+  action: string | null;
+  entityType: string | null;
+  entityId: string | null;
+  payloadHash: string | null;
+  evidenceId: string | null;
+  metadata: Record<string, unknown> | null;
 }
 
 export interface AuditPageResponse {
-  content: AuditEvent[];
+  items: AuditEvent[];
   page: number;
   size: number;
-  totalElements: number;
-  totalPages: number;
+  total: number;
 }
 
 // ===== API FUNCTIONS =====
@@ -189,6 +208,14 @@ export async function unlockUser(userId: string, request?: UnlockUserRequest): P
 }
 
 // API Keys
+export async function getApiKeys(): Promise<ApiKeyListItem[]> {
+  return http.get<ApiKeyListItem[]>('/api-keys');
+}
+
+export async function assignRoles(userId: string, roles: string[]): Promise<void> {
+  return http.post<void>(`/users/${userId}/roles`, { roles });
+}
+
 export async function createApiKey(request: ApiKeyCreateRequest, idempotencyKey?: string): Promise<ApiKeyCreateResponse> {
   return http.post<ApiKeyCreateResponse>('/api-keys', request, {
     headers: idempotencyKey ? { 'X-Idempotency-Key': idempotencyKey } : undefined,

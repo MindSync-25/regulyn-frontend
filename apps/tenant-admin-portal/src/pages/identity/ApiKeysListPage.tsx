@@ -7,20 +7,24 @@
  */
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, Info, AlertTriangle } from 'lucide-react';
-import { createApiKey, rotateApiKey, revokeApiKey, type ApiKeyCreateRequest } from '@/lib/api/identity';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, Copy, AlertTriangle, KeyRound, RefreshCw, XCircle } from 'lucide-react';
+import { createApiKey, rotateApiKey, revokeApiKey, getApiKeys, type ApiKeyCreateRequest, type ApiKeyListItem } from '@/lib/api/identity';
 import { toast } from 'sonner';
 
 export function ApiKeysListPage() {
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createdKey, setCreatedKey] = useState<{ keyName: string; apiKey: string } | null>(null);
-  const [rotateApiKeyId, setRotateApiKeyId] = useState('');
+  const [rotateTarget, setRotateTarget] = useState<ApiKeyListItem | null>(null);
   const [rotateKeyName, setRotateKeyName] = useState('');
   const [rotateExpiresAt, setRotateExpiresAt] = useState('');
-  const [revokeApiKeyId, setRevokeApiKeyId] = useState('');
-  const [revokeReason, setRevokeReason] = useState('');
+
+  // Fetch existing API keys
+  const keysQuery = useQuery({
+    queryKey: ['api-keys'],
+    queryFn: getApiKeys,
+  });
 
   // Create API key mutation
   const createMutation = useMutation({
@@ -47,7 +51,7 @@ export function ApiKeysListPage() {
     onSuccess: data => {
       toast.success(`API key "${data.keyName}" rotated`);
       setCreatedKey({ keyName: data.keyName, apiKey: data.apiKey });
-      setRotateApiKeyId('');
+      setRotateTarget(null);
       setRotateKeyName('');
       setRotateExpiresAt('');
       queryClient.invalidateQueries({ queryKey: ['api-keys'] });
@@ -63,8 +67,6 @@ export function ApiKeysListPage() {
     },
     onSuccess: () => {
       toast.success('API key revoked');
-      setRevokeApiKeyId('');
-      setRevokeReason('');
       queryClient.invalidateQueries({ queryKey: ['api-keys'] });
     },
     onError: (err: Error) => {
@@ -99,27 +101,143 @@ export function ApiKeysListPage() {
         </button>
       </div>
 
-      {/* Backend Limitation Notice */}
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
-        <div className="flex items-start gap-4">
-          <Info className="h-6 w-6 shrink-0 text-amber-600" />
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-amber-900">
-              API Keys List View Not Available
-            </h3>
-            <p className="mt-2 text-sm text-amber-800">
-              The backend does not currently expose a GET /api-keys endpoint for listing keys.
-              You can create new keys, but the list view requires backend implementation.
-            </p>
-            <p className="mt-3 text-sm text-amber-800">
-              <span className="font-medium">Available actions:</span> Create, Rotate (by ID), Revoke (by ID)
-            </p>
-            <p className="mt-2 text-xs text-amber-700">
-              To rotate or revoke a key, you'll need the API Key ID from creation time or audit logs.
-            </p>
+      {/* API Keys List */}
+      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+          <KeyRound className="h-4 w-4 text-gray-500" />
+          <h2 className="text-sm font-semibold text-gray-800">All API Keys</h2>
+          {keysQuery.data && (
+            <span className="ml-auto text-xs text-gray-500">{keysQuery.data.length} key{keysQuery.data.length !== 1 ? 's' : ''}</span>
+          )}
+        </div>
+
+        {keysQuery.isLoading && (
+          <div className="p-8 text-center text-sm text-gray-500">Loading API keys…</div>
+        )}
+        {keysQuery.error && (
+          <div className="p-8 text-center text-sm text-red-600">Failed to load API keys: {(keysQuery.error as Error).message}</div>
+        )}
+        {keysQuery.data && keysQuery.data.length === 0 && (
+          <div className="p-8 text-center text-sm text-gray-500">No API keys yet. Create one to get started.</div>
+        )}
+        {keysQuery.data && keysQuery.data.length > 0 && (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wide">
+                <th className="text-left px-4 py-3 font-medium">Name</th>
+                <th className="text-left px-4 py-3 font-medium">Prefix</th>
+                <th className="text-left px-4 py-3 font-medium">Status</th>
+                <th className="text-left px-4 py-3 font-medium">Ver.</th>
+                <th className="text-left px-4 py-3 font-medium">Expires</th>
+                <th className="text-left px-4 py-3 font-medium">Last Used</th>
+                <th className="text-left px-4 py-3 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {keysQuery.data.map((key) => {
+                const isRevoked = !!key.revokedAt;
+                const isExpired = !isRevoked && !!key.expiresAt && new Date(key.expiresAt) < new Date();
+                const isActive = !isRevoked && !isExpired && key.enabled;
+                return (
+                  <tr key={key.apiKeyId} className="border-t border-gray-50 hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{key.keyName}</div>
+                      <div className="text-xs text-gray-400 font-mono">{key.apiKeyId.slice(0, 8)}…</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{key.prefix ?? '—'}</code>
+                    </td>
+                    <td className="px-4 py-3">
+                      {isRevoked ? (
+                        <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">Revoked</span>
+                      ) : isExpired ? (
+                        <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Expired</span>
+                      ) : isActive ? (
+                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">Active</span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">Disabled</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">v{key.keyVersion}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{key.expiresAt ? new Date(key.expiresAt).toLocaleString() : '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleString() : '—'}</td>
+                    <td className="px-4 py-3">
+                      {!isRevoked && (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => { setRotateTarget(key); setRotateKeyName(key.keyName); setRotateExpiresAt(''); }}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100"
+                          >
+                            <RefreshCw className="h-3 w-3" /> Rotate
+                          </button>
+                          <button
+                            type="button"
+                            disabled={revokeMutation.isPending}
+                            onClick={() => {
+                              if (confirm(`Revoke "${key.keyName}"? This cannot be undone.`)) {
+                                revokeMutation.mutate({ apiKeyId: key.apiKeyId, reason: undefined });
+                              }
+                            }}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+                          >
+                            <XCircle className="h-3 w-3" /> Revoke
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Rotate Dialog */}
+      {rotateTarget && (
+        <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setRotateTarget(null)}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+            <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
+              <div className="border-b border-gray-200 px-6 py-4">
+                <h3 className="text-lg font-semibold text-gray-900">Rotate API Key</h3>
+                <p className="mt-1 text-sm text-gray-500">Rotating <strong>{rotateTarget.keyName}</strong> will immediately invalidate the old key.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">New Key Name</label>
+                  <input
+                    type="text"
+                    value={rotateKeyName}
+                    onChange={e => setRotateKeyName(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Expiration (optional)</label>
+                  <input
+                    type="datetime-local"
+                    value={rotateExpiresAt}
+                    onChange={e => setRotateExpiresAt(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setRotateTarget(null)} className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                  <button
+                    type="button"
+                    disabled={rotateMutation.isPending || !rotateKeyName}
+                    onClick={() => rotateMutation.mutate({ apiKeyId: rotateTarget.apiKeyId, request: { keyName: rotateKeyName, expiresAt: rotateExpiresAt || undefined } })}
+                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {rotateMutation.isPending ? 'Rotating…' : 'Rotate Key'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Created Key Display (show once) */}
       {createdKey && (
@@ -158,100 +276,6 @@ export function ApiKeysListPage() {
         </div>
       )}
 
-      {/* Rotate/Revoke by ID (since no list endpoint) */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-sm font-semibold text-gray-900">Rotate API Key (by ID)</h2>
-          <p className="mt-1 text-xs text-gray-600">Requires API key ID (from creation time or audit logs).</p>
-
-          <div className="mt-4 space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700">API Key ID</label>
-              <input
-                type="text"
-                value={rotateApiKeyId}
-                onChange={(e) => setRotateApiKeyId(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="UUID"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">Key Name</label>
-              <input
-                type="text"
-                value={rotateKeyName}
-                onChange={(e) => setRotateKeyName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="e.g., Production API Key"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">Expiration (optional)</label>
-              <input
-                type="datetime-local"
-                value={rotateExpiresAt}
-                onChange={(e) => setRotateExpiresAt(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-
-            <button
-              type="button"
-              disabled={rotateMutation.isPending || !rotateApiKeyId || !rotateKeyName}
-              onClick={() =>
-                rotateMutation.mutate({
-                  apiKeyId: rotateApiKeyId,
-                  request: {
-                    keyName: rotateKeyName,
-                    expiresAt: rotateExpiresAt || undefined,
-                  },
-                })
-              }
-              className="mt-2 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {rotateMutation.isPending ? 'Rotating...' : 'Rotate Key'}
-            </button>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-sm font-semibold text-gray-900">Revoke API Key (by ID)</h2>
-          <p className="mt-1 text-xs text-gray-600">Revocation cannot be undone.</p>
-
-          <div className="mt-4 space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700">API Key ID</label>
-              <input
-                type="text"
-                value={revokeApiKeyId}
-                onChange={(e) => setRevokeApiKeyId(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="UUID"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">Reason (optional)</label>
-              <input
-                type="text"
-                value={revokeReason}
-                onChange={(e) => setRevokeReason(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="e.g., Key compromised"
-              />
-            </div>
-
-            <button
-              type="button"
-              disabled={revokeMutation.isPending || !revokeApiKeyId}
-              onClick={() => revokeMutation.mutate({ apiKeyId: revokeApiKeyId, reason: revokeReason || undefined })}
-              className="mt-2 w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-            >
-              {revokeMutation.isPending ? 'Revoking...' : 'Revoke Key'}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Create Dialog */}
       {showCreateDialog && (
         <CreateApiKeyDialog
@@ -261,37 +285,6 @@ export function ApiKeysListPage() {
           isLoading={createMutation.isPending}
         />
       )}
-
-      {/* Technical Details */}
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
-        <h3 className="text-sm font-medium text-gray-900">Backend Endpoints</h3>
-        <div className="mt-3 space-y-2 text-sm text-gray-700">
-          <div className="flex items-center gap-2">
-            <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-              Available
-            </span>
-            <code className="text-xs">POST /api-keys</code> - Create key
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-              Available
-            </span>
-            <code className="text-xs">POST /api-keys/{'{apiKeyId}'}/rotate</code> - Rotate key
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-              Available
-            </span>
-            <code className="text-xs">POST /api-keys/{'{apiKeyId}'}/revoke</code> - Revoke key
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-              Missing
-            </span>
-            <code className="text-xs">GET /api-keys</code> - List keys (not implemented)
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

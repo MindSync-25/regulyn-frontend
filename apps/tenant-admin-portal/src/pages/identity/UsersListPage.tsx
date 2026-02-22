@@ -5,7 +5,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, Search, Lock, Unlock, Mail, User as UserIcon, UserPlus, Activity, FileText, Send } from 'lucide-react';
-import { getUsers, createUser, inviteUser, lockUser, unlockUser, type User, type CreateUserRequest, type CreateInviteRequest, type InviteResponse, type LockUserRequest, type UnlockUserRequest } from '@/lib/api/identity';
+import { getUsers, createUser, assignRoles, inviteUser, lockUser, unlockUser, type User, type CreateUserRequest, type CreateInviteRequest, type InviteResponse, type LockUserRequest, type UnlockUserRequest } from '@/lib/api/identity';
 import { getAuditTimeline } from '@/lib/api/evidence';
 import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 import { toast } from 'sonner';
@@ -50,6 +50,7 @@ export function UsersListPage() {
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserFirstName, setNewUserFirstName] = useState('');
   const [newUserLastName, setNewUserLastName] = useState('');
+  const [newUserRoles, setNewUserRoles] = useState<string[]>([]);
 
   // Invite user form state
   const [inviteEmail, setInviteEmail] = useState('');
@@ -109,8 +110,12 @@ export function UsersListPage() {
 
   // Create user mutation
   const createMutation = useMutation({
-    mutationFn: (request: CreateUserRequest) => {
-      return createUser(request);
+    mutationFn: async ({ request, roles }: { request: CreateUserRequest; roles: string[] }) => {
+      const res = await createUser(request);
+      if (roles.length > 0) {
+        await assignRoles(res.userId, roles);
+      }
+      return res;
     },
     onSuccess: () => {
       toast.success('User created successfully');
@@ -120,6 +125,7 @@ export function UsersListPage() {
       setNewUserPassword('');
       setNewUserFirstName('');
       setNewUserLastName('');
+      setNewUserRoles([]);
     },
     onError: (err: Error) => {
       toast.error(`Failed to create user: ${err.message}`);
@@ -204,10 +210,13 @@ export function UsersListPage() {
       return;
     }
     createMutation.mutate({
-      email: newUserEmail,
-      password: newUserPassword,
-      firstName: newUserFirstName || undefined,
-      lastName: newUserLastName || undefined,
+      request: {
+        email: newUserEmail,
+        password: newUserPassword,
+        firstName: newUserFirstName || undefined,
+        lastName: newUserLastName || undefined,
+      },
+      roles: newUserRoles,
     });
   };
 
@@ -379,6 +388,15 @@ export function UsersListPage() {
                         <Mail className="h-3 w-3" />
                         {user.email}
                       </div>
+                      {(user.roles ?? []).length > 0 && (
+                        <div className="flex items-center gap-1 mt-1 flex-wrap">
+                          {(user.roles ?? []).map(role => (
+                            <span key={role} className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                              {role}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <div className="text-xs text-gray-500 mt-1">
                         ID: {user.userId}
                       </div>
@@ -578,6 +596,25 @@ export function UsersListPage() {
                 value={newUserLastName}
                 onChange={(e) => setNewUserLastName(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Roles</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.REVIEWER, ROLES.OPERATOR, ROLES.AUDITOR, ROLES.CONNECTOR_AGENT].map((role) => (
+                  <label key={role} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newUserRoles.includes(role)}
+                      onChange={() =>
+                        setNewUserRoles(prev =>
+                          prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+                        )
+                      }
+                    />
+                    {role}
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter>

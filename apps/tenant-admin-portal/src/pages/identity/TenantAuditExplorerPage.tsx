@@ -14,11 +14,14 @@ function toEvidenceAuditEvent(event: IdentityAuditEvent): EvidenceAuditEvent {
   return {
     id: event.eventId,
     tenantId: event.tenantId,
-    actorId: event.userId,
-    eventType: event.eventType,
+    actorId: event.actorId,
+    eventType: event.action ?? event.service ?? 'UNKNOWN',
     correlationId: null,
-    occurredAt: event.timestamp,
-    summary: `${event.eventType} - ${JSON.stringify(event.details)}`,
+    occurredAt: event.occurredAt,
+    summary: [
+      event.action,
+      event.entityType && event.entityId ? `${event.entityType}:${event.entityId}` : event.entityType,
+    ].filter(Boolean).join(' — ') || 'Audit event',
   };
 }
 
@@ -153,20 +156,20 @@ export function TenantAuditExplorerPage() {
           <h2 className="text-lg font-semibold text-gray-900">Audit Events</h2>
           {auditQuery.data && (
             <span className="text-sm text-gray-600">
-              ({auditQuery.data.totalElements} total)
+              ({auditQuery.data.total} total)
             </span>
           )}
         </div>
 
         {auditQuery.data && (
           <AuditTimeline
-            events={auditQuery.data.content.map(toEvidenceAuditEvent)}
+            events={(auditQuery.data.items ?? []).map(toEvidenceAuditEvent)}
             isLoading={auditQuery.isLoading}
             error={auditQuery.error as Error}
             currentPage={page}
-            totalPages={auditQuery.data.totalPages}
+            totalPages={Math.ceil(auditQuery.data.total / pageSize)}
             pageSize={pageSize}
-            totalElements={auditQuery.data.totalElements}
+            totalElements={auditQuery.data.total}
             onPageChange={setPage}
           />
         )}
@@ -183,7 +186,7 @@ export function TenantAuditExplorerPage() {
           </div>
         )}
 
-        {auditQuery.data && auditQuery.data.content.length === 0 && (
+        {auditQuery.data && auditQuery.data.items.length === 0 && (
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
             <Calendar className="mx-auto h-12 w-12 text-gray-400" />
             <p className="mt-4 text-sm text-gray-600">
