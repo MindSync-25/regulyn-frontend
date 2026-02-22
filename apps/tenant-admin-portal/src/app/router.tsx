@@ -31,6 +31,14 @@ import { PurposesHistoryPage } from '@/pages/consent/PurposesHistoryPage';
 import { ReconsentDashboardPage } from '@/pages/consent/ReconsentDashboardPage';
 import { CommunicationLedgerPage } from '@/pages/consent/CommunicationLedgerPage';
 import { ROLES } from '@/lib/auth/roles';
+import { RopaListPage } from '@/pages/governance/RopaListPage';
+import { RopaDetailPage } from '@/pages/governance/RopaDetailPage';
+import { VendorListPage } from '@/pages/governance/VendorListPage';
+import { VendorDetailPage } from '@/pages/governance/VendorDetailPage';
+import { SharingLogsPage } from '@/pages/governance/SharingLogsPage';
+import { ScanSourcesPage } from '@/pages/governance/ScanSourcesPage';
+import { ScanRunsPage } from '@/pages/governance/ScanRunsPage';
+import { ScanRunDetailPage } from '@/pages/governance/ScanRunDetailPage';
 
 /**
  * Application router configuration
@@ -71,23 +79,92 @@ export const router = createBrowserRouter([
         ),
       },
       
-      // ROPA (Records of Processing Activities)
+      // Governance (ROPA + Vendors + Sharing + Scanner)
       {
-        path: 'ropa',
-        element: (
-          <RoleGuard
-            allowedRoles={[
-              ROLES.TENANT_ADMIN,
-              ROLES.DPO,
-              ROLES.REVIEWER,
-            ]}
-          >
-            <ModulePlaceholderPage
-              moduleName="ROPA"
-              description="Records of Processing Activities"
-            />
-          </RoleGuard>
-        ),
+        path: 'governance',
+        children: [
+          {
+            index: true,
+            element: <Navigate to="/governance/ropa" replace />,
+          },
+          // ROPA
+          {
+            path: 'ropa',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.REVIEWER]}>
+                <RopaListPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'ropa/:activityId',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.REVIEWER]}>
+                <RopaDetailPage />
+              </RoleGuard>
+            ),
+          },
+          // Vendors
+          {
+            path: 'vendors',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO]}>
+                <VendorListPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'vendors/:vendorId',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO]}>
+                <VendorDetailPage />
+              </RoleGuard>
+            ),
+          },
+          // Sharing Logs
+          {
+            path: 'sharing',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO]}>
+                <SharingLogsPage />
+              </RoleGuard>
+            ),
+          },
+          // Scanner
+          {
+            path: 'scanner',
+            children: [
+              {
+                index: true,
+                element: <Navigate to="/governance/scanner/sources" replace />,
+              },
+              {
+                path: 'sources',
+                element: (
+                  <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO]}>
+                    <ScanSourcesPage />
+                  </RoleGuard>
+                ),
+              },
+              {
+                path: 'runs',
+                element: (
+                  <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO]}>
+                    <ScanRunsPage />
+                  </RoleGuard>
+                ),
+              },
+              {
+                path: 'runs/:runId',
+                element: (
+                  <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO]}>
+                    <ScanRunDetailPage />
+                  </RoleGuard>
+                ),
+              },
+            ],
+          },
+        ],
       },
       
       // Consent Management
@@ -217,23 +294,7 @@ export const router = createBrowserRouter([
         ],
       },
       
-      // Vendor & Third-Party Management
-      {
-        path: 'vendors',
-        element: (
-          <RoleGuard
-            allowedRoles={[
-              ROLES.TENANT_ADMIN,
-              ROLES.DPO,
-            ]}
-          >
-            <ModulePlaceholderPage
-              moduleName="Vendor Management"
-              description="Manage third-party vendors and data sharing agreements"
-            />
-          </RoleGuard>
-        ),
-      },
+      // Vendor & Third-Party Management (moved under /governance/vendors)
       
       // Data Retention & Deletion
       {

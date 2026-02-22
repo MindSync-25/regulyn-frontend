@@ -19,14 +19,42 @@ export const navigationConfig: NavItem[] = [
     icon: 'Home',
     // All authenticated users can see dashboard
   },
+  // Governance group (ROPA + Vendors + Sharing + Scanner)
   {
-    label: 'ROPA',
-    path: '/ropa',
-    icon: 'FileText',
+    label: 'Governance',
+    path: '/governance',
+    icon: 'Shield',
     allowedRoles: [
       ROLES.TENANT_ADMIN,
       ROLES.DPO,
       ROLES.REVIEWER,
+    ],
+    children: [
+      {
+        label: 'ROPA',
+        path: '/governance/ropa',
+        allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.REVIEWER],
+      },
+      {
+        label: 'Vendors',
+        path: '/governance/vendors',
+        allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO],
+      },
+      {
+        label: 'Sharing Logs',
+        path: '/governance/sharing',
+        allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO],
+      },
+      {
+        label: 'Scanner Sources',
+        path: '/governance/scanner/sources',
+        allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO],
+      },
+      {
+        label: 'Scanner Runs',
+        path: '/governance/scanner/runs',
+        allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO],
+      },
     ],
   },
   {
@@ -82,15 +110,7 @@ export const navigationConfig: NavItem[] = [
       ROLES.REVIEWER,
     ],
   },
-  {
-    label: 'Vendors',
-    path: '/vendors',
-    icon: 'Building',
-    allowedRoles: [
-      ROLES.TENANT_ADMIN,
-      ROLES.DPO,
-    ],
-  },
+
   {
     label: 'Retention',
     path: '/retention/rules',

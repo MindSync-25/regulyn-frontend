@@ -8,6 +8,9 @@ interface EnvConfig {
   consentServiceUrl: string;
   notificationServiceUrl: string;
   evidenceServiceUrl: string;
+  ropaServiceUrl: string;
+  vendorServiceUrl: string;
+  scannerServiceUrl: string;
   appName: string;
   isDevelopment: boolean;
   isProduction: boolean;
@@ -44,6 +47,9 @@ export const env: EnvConfig = {
     'http://localhost:8092'
   ),
   evidenceServiceUrl: getOptionalEnv('VITE_EVIDENCE_SERVICE_URL', 'http://localhost:8095'),
+  ropaServiceUrl: getOptionalEnv('VITE_ROPA_SERVICE_URL', 'http://localhost:8085'),
+  vendorServiceUrl: getOptionalEnv('VITE_VENDOR_SERVICE_URL', 'http://localhost:8090'),
+  scannerServiceUrl: getOptionalEnv('VITE_SCANNER_SERVICE_URL', 'http://localhost:8094'),
   appName: getOptionalEnv('VITE_APP_NAME', 'Regulyn Tenant Admin Portal'),
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
@@ -54,6 +60,9 @@ validateUrl(env.apiBaseUrl, 'VITE_API_BASE_URL');
 validateUrl(env.consentServiceUrl, 'VITE_CONSENT_SERVICE_URL');
 validateUrl(env.notificationServiceUrl, 'VITE_NOTIFICATION_SERVICE_URL');
 validateUrl(env.evidenceServiceUrl, 'VITE_EVIDENCE_SERVICE_URL');
+validateUrl(env.ropaServiceUrl, 'VITE_ROPA_SERVICE_URL');
+validateUrl(env.vendorServiceUrl, 'VITE_VENDOR_SERVICE_URL');
+validateUrl(env.scannerServiceUrl, 'VITE_SCANNER_SERVICE_URL');
 
 // Log configuration in development
 if (env.isDevelopment) {
@@ -62,6 +71,9 @@ if (env.isDevelopment) {
     consentServiceUrl: env.consentServiceUrl,
     notificationServiceUrl: env.notificationServiceUrl,
     evidenceServiceUrl: env.evidenceServiceUrl,
+    ropaServiceUrl: env.ropaServiceUrl,
+    vendorServiceUrl: env.vendorServiceUrl,
+    scannerServiceUrl: env.scannerServiceUrl,
     appName: env.appName,
     mode: import.meta.env.MODE,
   });
