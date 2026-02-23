@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { getClaim, approveClaim, closeClaim, type Claim } from '@/lib/api/nominee';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: 'bg-blue-100 text-blue-800',
@@ -20,7 +21,7 @@ function Badge({ label }: { label: string }) {
 export default function NomineeDetailPage() {
   const { claimId } = useParams<{ claimId: string }>();
   const qc = useQueryClient();
-
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [approveNotes, setApproveNotes] = useState('');
   const [closureNotes, setClosureNotes] = useState('');
   const [showApprove, setShowApprove] = useState(false);
@@ -83,8 +84,20 @@ export default function NomineeDetailPage() {
         <Link to="/hr/nominees" className="text-sm text-primary hover:underline">
           ← Back to Nominees
         </Link>
-        <h1 className="text-2xl font-bold text-foreground">Claim Detail</h1>
-        <Badge label={claim.status} />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-foreground">Claim Detail</h1>
+            <Badge label={claim.status} />
+          </div>
+          <button
+            type="button"
+            onClick={() => setEvidenceOpen(true)}
+            className="rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+            aria-label="Open evidence and audit drawer"
+          >
+            🔍 Evidence / Audit
+          </button>
+        </div>
       </div>
 
       {/* Claim info */}
@@ -215,6 +228,14 @@ export default function NomineeDetailPage() {
           </div>
         </div>
       )}
+
+      <EvidenceDrawer
+        isOpen={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        objectType="NOMINEE_CLAIM"
+        objectId={claimId}
+        title="Nominee Claim — Evidence & Audit"
+      />
     </div>
   );
 }

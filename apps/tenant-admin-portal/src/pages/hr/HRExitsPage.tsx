@@ -8,6 +8,7 @@ import {
   type EmployeeRequest,
   type RequestStatus,
 } from '@/lib/api/employee';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 
 const STATUS_OPTIONS: RequestStatus[] = [
   'RECEIVED',
@@ -47,6 +48,7 @@ interface DetailModal {
 
 export default function HRExitsPage() {
   const qc = useQueryClient();
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [filterStatus, setFilterStatus] = useState('');
   const [filterType, setFilterType] = useState('DELETE');
@@ -122,11 +124,21 @@ export default function HRExitsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">HR Exit Workflows</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Employee request workflows — review, approve, reject, or close requests.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">HR Exit Workflows</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Employee request workflows — review, approve, reject, or close requests.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEvidenceOpen(true)}
+          className="rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+          aria-label="Open evidence and audit drawer"
+        >
+          🔍 Evidence / Audit
+        </button>
       </div>
 
       {/* Filters */}
@@ -374,6 +386,13 @@ export default function HRExitsPage() {
           </div>
         </div>
       )}
+
+      <EvidenceDrawer
+        isOpen={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        objectType="EMPLOYEE_REQUEST"
+        title="Employee Requests — Evidence & Audit"
+      />
     </div>
   );
 }

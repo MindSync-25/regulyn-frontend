@@ -7,6 +7,7 @@ import {
   type HRPurpose,
   type LawfulBasis,
 } from '@/lib/api/employee';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 
 const LAWFUL_BASIS_OPTIONS: LawfulBasis[] = [
   'CONTRACT',
@@ -25,6 +26,7 @@ const emptyForm = {
 
 export default function HRRulesPage() {
   const qc = useQueryClient();
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
@@ -62,13 +64,23 @@ export default function HRRulesPage() {
             Manage HR purposes, lawful bases, and retention policies for employee data.
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          + New Purpose
-        </button>
-      </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setEvidenceOpen(true)}
+            className="rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+            aria-label="Open evidence and audit drawer"
+          >
+            🔍 Evidence / Audit
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            + New Purpose
+          </button>
+        </div>      </div>
 
       {/* Create modal */}
       {showCreate && (
@@ -199,6 +211,13 @@ export default function HRRulesPage() {
           </table>
         )}
       </div>
+
+      <EvidenceDrawer
+        isOpen={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        objectType="HR_PURPOSE"
+        title="HR Rules — Evidence & Audit"
+      />
     </div>
   );
 }

@@ -11,9 +11,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Copy, AlertTriangle, KeyRound, RefreshCw, XCircle } from 'lucide-react';
 import { createApiKey, rotateApiKey, revokeApiKey, getApiKeys, type ApiKeyCreateRequest, type ApiKeyListItem } from '@/lib/api/identity';
 import { toast } from 'sonner';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 
 export function ApiKeysListPage() {
   const queryClient = useQueryClient();
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createdKey, setCreatedKey] = useState<{ keyName: string; apiKey: string } | null>(null);
   const [rotateTarget, setRotateTarget] = useState<ApiKeyListItem | null>(null);
@@ -91,14 +93,24 @@ export function ApiKeysListPage() {
             Manage API keys for programmatic access to Regulyn services
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowCreateDialog(true)}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          Create API Key
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setEvidenceOpen(true)}
+            className="rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+            aria-label="Open evidence and audit drawer"
+          >
+            🔍 Evidence / Audit
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowCreateDialog(true)}
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            Create API Key
+          </button>
+        </div>
       </div>
 
       {/* API Keys List */}
@@ -285,6 +297,13 @@ export function ApiKeysListPage() {
           isLoading={createMutation.isPending}
         />
       )}
+
+      <EvidenceDrawer
+        isOpen={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        objectType="API_KEY"
+        title="API Keys — Evidence & Audit"
+      />
     </div>
   );
 }

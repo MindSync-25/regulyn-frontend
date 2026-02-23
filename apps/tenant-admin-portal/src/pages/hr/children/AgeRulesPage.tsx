@@ -8,6 +8,7 @@ import {
   type AgeRule,
   type AgeRuleEffective,
 } from '@/lib/api/children';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 
 const EMPTY_FORM = {
   countryCode: '',
@@ -18,6 +19,7 @@ const EMPTY_FORM = {
 
 export default function AgeRulesPage() {
   const qc = useQueryClient();
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [showUpsert, setShowUpsert] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -96,12 +98,22 @@ export default function AgeRulesPage() {
             Configure age thresholds and consent models per country/region for child data processing.
           </p>
         </div>
-        <button
-          onClick={() => { setForm(EMPTY_FORM); setShowUpsert(true); }}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          + Add / Update Rule
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setEvidenceOpen(true)}
+            className="rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+            aria-label="Open evidence and audit drawer"
+          >
+            🔍 Evidence / Audit
+          </button>
+          <button
+            onClick={() => { setForm(EMPTY_FORM); setShowUpsert(true); }}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            + Add / Update Rule
+          </button>
+        </div>
       </div>
 
       {/* Effective rule lookup */}
@@ -285,6 +297,13 @@ export default function AgeRulesPage() {
           </div>
         </div>
       )}
+
+      <EvidenceDrawer
+        isOpen={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        objectType="AGE_RULE"
+        title="Age Rules — Evidence & Audit"
+      />
     </div>
   );
 }

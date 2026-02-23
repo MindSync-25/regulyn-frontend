@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { createEmployeeExport, type EmployeeExport } from '@/lib/api/employee';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -14,6 +15,7 @@ function oneYearAgo() {
 }
 
 export default function HRExportsPage() {
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [form, setForm] = useState({
     title: '',
     periodFrom: oneYearAgo(),
@@ -50,12 +52,22 @@ export default function HRExportsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Employee Compliance Exports</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Generate compliance export bundles for employee data. Exports are packaged with evidence
-          and made available for download.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Employee Compliance Exports</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Generate compliance export bundles for employee data. Exports are packaged with evidence
+            and made available for download.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEvidenceOpen(true)}
+          className="rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+          aria-label="Open evidence and audit drawer"
+        >
+          🔍 Evidence / Audit
+        </button>
       </div>
 
       {/* Export form */}
@@ -140,6 +152,13 @@ export default function HRExportsPage() {
           <li>• Exports are tenant-scoped and respect the configured retention period</li>
         </ul>
       </div>
+
+      <EvidenceDrawer
+        isOpen={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        objectType="EMPLOYEE_EXPORT"
+        title="Employee Exports — Evidence & Audit"
+      />
     </div>
   );
 }

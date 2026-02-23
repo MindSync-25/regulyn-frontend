@@ -12,6 +12,7 @@ import {
   type Nominee,
   type Claim,
 } from '@/lib/api/nominee';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -31,6 +32,7 @@ function Badge({ label }: { label: string }) {
 
 export default function NomineesPage() {
   const qc = useQueryClient();
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [nomineeId, setNomineeId] = useState('');
   const [activeId, setActiveId] = useState('');
 
@@ -92,12 +94,22 @@ export default function NomineesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Nominee Management</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Look up nominees by ID to view their verification status and claims. Verify, reject, or
-          disable nominees.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Nominee Management</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Look up nominees by ID to view their verification status and claims. Verify, reject, or
+            disable nominees.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEvidenceOpen(true)}
+          className="rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+          aria-label="Open evidence and audit drawer"
+        >
+          🔍 Evidence / Audit
+        </button>
       </div>
 
       {/* ⚠️ RBAC note */}
@@ -300,6 +312,13 @@ export default function NomineesPage() {
           </div>
         </div>
       )}
+
+      <EvidenceDrawer
+        isOpen={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        objectType="NOMINEE"
+        title="Nominees — Evidence & Audit"
+      />
     </div>
   );
 }

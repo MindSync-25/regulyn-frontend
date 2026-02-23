@@ -5,6 +5,7 @@ import {
   type EmployeeDataRecord,
   type DataCategory,
 } from '@/lib/api/employee';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 
 const CATEGORY_OPTIONS: DataCategory[] = [
   'RESUME',
@@ -23,6 +24,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function HRAccessLogsPage() {
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [filterEmployee, setFilterEmployee] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterSystem, setFilterSystem] = useState('');
@@ -55,11 +57,21 @@ export default function HRAccessLogsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Employee Data Records</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Browse all employee data records. Filter by employee, data category, or source system.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Employee Data Records</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Browse all employee data records. Filter by employee, data category, or source system.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEvidenceOpen(true)}
+          className="rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+          aria-label="Open evidence and audit drawer"
+        >
+          🔍 Evidence / Audit
+        </button>
       </div>
 
       {/* Filters */}
@@ -172,6 +184,13 @@ export default function HRAccessLogsPage() {
           </table>
         )}
       </div>
+
+      <EvidenceDrawer
+        isOpen={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        objectType="EMPLOYEE_DATA_RECORD"
+        title="Employee Data Records — Evidence & Audit"
+      />
     </div>
   );
 }

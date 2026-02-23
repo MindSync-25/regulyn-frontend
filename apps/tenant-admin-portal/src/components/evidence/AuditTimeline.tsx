@@ -1,10 +1,11 @@
 /**
  * AuditTimeline - Reusable audit events timeline component
- * Displays paginated audit events with expand/collapse for details
+ * Displays paginated audit events with expand/collapse for details.
+ * Expanded view shows a human-readable summary by default with a Raw JSON toggle.
  */
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Clock, User, Activity } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, User, Activity, Code2, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { AuditEvent } from '@/lib/api/evidence';
 
@@ -34,9 +35,22 @@ export function AuditTimeline({
   emptyMessage = 'No audit events found',
 }: AuditTimelineProps) {
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
+  const [rawJsonEvents, setRawJsonEvents] = useState<Set<string>>(new Set());
 
   const toggleExpand = (eventId: string) => {
     setExpandedEvents(prev => {
+      const next = new Set(prev);
+      if (next.has(eventId)) {
+        next.delete(eventId);
+      } else {
+        next.add(eventId);
+      }
+      return next;
+    });
+  };
+
+  const toggleRawJson = (eventId: string) => {
+    setRawJsonEvents(prev => {
       const next = new Set(prev);
       if (next.has(eventId)) {
         next.delete(eventId);
@@ -156,22 +170,81 @@ export function AuditTimeline({
 
                 {/* Expanded details */}
                 {isExpanded && (
-                  <div className="mt-4 rounded bg-gray-50 p-3">
-                    <pre className="overflow-x-auto text-xs text-gray-700">
-                      {JSON.stringify(
-                        {
-                          id: event.id,
-                          tenantId: event.tenantId,
-                          actorId: event.actorId,
-                          eventType: event.eventType,
-                          correlationId: event.correlationId,
-                          occurredAt: event.occurredAt,
-                          summary: event.summary,
-                        },
-                        null,
-                        2
-                      )}
-                    </pre>
+                  <div className="mt-4">
+                    {/* View toggle */}
+                    <div className="mb-2 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleRawJson(event.id)}
+                        className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                          rawJsonEvents.has(event.id)
+                            ? 'bg-gray-200 text-gray-700'
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        }`}
+                        aria-label={rawJsonEvents.has(event.id) ? 'Show human view' : 'Show raw JSON'}
+                      >
+                        {rawJsonEvents.has(event.id) ? (
+                          <><Eye className="h-3 w-3" /> Human View</>
+                        ) : (
+                          <><Code2 className="h-3 w-3" /> Raw JSON</>
+                        )}
+                      </button>
+                    </div>
+
+                    {rawJsonEvents.has(event.id) ? (
+                      /* Raw JSON view */
+                      <div className="rounded bg-gray-900 p-3">
+                        <pre className="overflow-x-auto text-xs text-green-400">
+                          {JSON.stringify(event, null, 2)}
+                        </pre>
+                      </div>
+                    ) : (
+                      /* Human-readable view */
+                      <dl className="rounded bg-gray-50 p-3 text-xs space-y-1.5">
+                        {event.id && (
+                          <div className="flex gap-2">
+                            <dt className="w-28 shrink-0 font-medium text-gray-500">Event ID</dt>
+                            <dd className="font-mono text-gray-700 truncate">{event.id}</dd>
+                          </div>
+                        )}
+                        {event.tenantId && (
+                          <div className="flex gap-2">
+                            <dt className="w-28 shrink-0 font-medium text-gray-500">Tenant</dt>
+                            <dd className="font-mono text-gray-700 truncate">{event.tenantId}</dd>
+                          </div>
+                        )}
+                        {event.actorId && (
+                          <div className="flex gap-2">
+                            <dt className="w-28 shrink-0 font-medium text-gray-500">Actor</dt>
+                            <dd className="font-mono text-gray-700 truncate">{event.actorId}</dd>
+                          </div>
+                        )}
+                        {event.eventType && (
+                          <div className="flex gap-2">
+                            <dt className="w-28 shrink-0 font-medium text-gray-500">Event Type</dt>
+                            <dd className="text-gray-700">{event.eventType}</dd>
+                          </div>
+                        )}
+                        {event.correlationId && (
+                          <div className="flex gap-2">
+                            <dt className="w-28 shrink-0 font-medium text-gray-500">Correlation</dt>
+                            <dd className="font-mono text-gray-700 truncate">{event.correlationId}</dd>
+                          </div>
+                        )}
+                        {event.occurredAt && (
+                          <div className="flex gap-2">
+                            <dt className="w-28 shrink-0 font-medium text-gray-500">Occurred At</dt>
+                            <dd className="text-gray-700">{new Date(event.occurredAt).toLocaleString()}</dd>
+                          </div>
+                        )}
+                        {event.summary && (
+                          <div className="flex gap-2">
+                            <dt className="w-28 shrink-0 font-medium text-gray-500">Summary</dt>
+                            <dd className="text-gray-700">{event.summary}</dd>
+                          </div>
+                        )}
+                      </dl>
+                    )}
                   </div>
                 )}
               </div>

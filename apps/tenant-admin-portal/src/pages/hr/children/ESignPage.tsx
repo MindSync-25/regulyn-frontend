@@ -12,12 +12,14 @@ import {
   type Consent,
   type EsignRequest,
 } from '@/lib/api/children';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 
 type Step = 'guardian' | 'child' | 'consent' | 'esign' | 'done';
 
 const ESIGN_PROVIDERS = ['DOCUSIGN', 'SIGNDESK', 'LEEGALITY'];
 
 export default function ESignPage() {
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [step, setStep] = useState<Step>('guardian');
   const [guardian, setGuardian] = useState<Guardian | null>(null);
   const [child, setChild] = useState<Child | null>(null);
@@ -138,11 +140,21 @@ export default function ESignPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Guardian Consent & eSign</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Create guardian–child consent flows with e-signature requests for child data processing.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Guardian Consent & eSign</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Create guardian–child consent flows with e-signature requests for child data processing.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEvidenceOpen(true)}
+          className="rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+          aria-label="Open evidence and audit drawer"
+        >
+          🔍 Evidence / Audit
+        </button>
       </div>
 
       {/* Info banner */}
@@ -350,6 +362,14 @@ export default function ESignPage() {
           </button>
         </div>
       )}
+
+      <EvidenceDrawer
+        isOpen={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        objectType="CHILD_CONSENT"
+        objectId={consent?.consentId}
+        title="Guardian Consent & eSign — Evidence & Audit"
+      />
     </div>
   );
 }

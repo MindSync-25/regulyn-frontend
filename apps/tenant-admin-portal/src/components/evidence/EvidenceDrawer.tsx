@@ -1,9 +1,10 @@
 /**
  * EvidenceDrawer - Reusable right-side drawer for evidence context
- * Can be used from any module to show evidence bundles and audit timeline
+ * Can be used from any module to show evidence bundles and audit timeline.
+ * Part 10: keyboard escape close, accessible roles, human-readable bundle view.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Package, FileText, Activity } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -37,6 +38,24 @@ export function EvidenceDrawer({
   const [bundlesPage, setBundlesPage] = useState(0);
   const [auditPage, setAuditPage] = useState(0);
   const pageSize = 10;
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Keyboard: Escape closes drawer
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
+  // Focus the close button when the drawer opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => closeButtonRef.current?.focus(), 50);
+    }
+  }, [isOpen]);
 
   const tenantId = useTenantId();
 
@@ -81,15 +100,21 @@ export function EvidenceDrawer({
       />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 bottom-0 z-50 flex w-full max-w-2xl flex-col bg-white shadow-xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="fixed right-0 top-0 bottom-0 z-50 flex w-full max-w-2xl flex-col bg-white shadow-xl"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <h2 className="text-lg font-semibold text-gray-900" id="evidence-drawer-title">{title}</h2>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Close drawer"
+            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Close evidence drawer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -109,10 +134,13 @@ export function EvidenceDrawer({
         )}
 
         {/* Tabs */}
-        <div className="border-b border-gray-200">
-          <nav className="flex gap-8 px-6" aria-label="Evidence tabs">
+        <div className="border-b border-gray-200" role="tablist" aria-label="Evidence sections">
+          <nav className="flex gap-8 px-6">
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'bundles'}
+              aria-controls="evidence-panel-bundles"
               onClick={() => setActiveTab('bundles')}
               className={`flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
                 activeTab === 'bundles'
@@ -120,11 +148,14 @@ export function EvidenceDrawer({
                   : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
               }`}
             >
-              <Package className="h-4 w-4" />
+              <Package className="h-4 w-4" aria-hidden="true" />
               Evidence Bundles
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'audit'}
+              aria-controls="evidence-panel-audit"
               onClick={() => setActiveTab('audit')}
               className={`flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
                 activeTab === 'audit'
@@ -132,7 +163,7 @@ export function EvidenceDrawer({
                   : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
               }`}
             >
-              <Activity className="h-4 w-4" />
+              <Activity className="h-4 w-4" aria-hidden="true" />
               Audit Timeline
             </button>
           </nav>
@@ -141,7 +172,7 @@ export function EvidenceDrawer({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'bundles' && (
-            <div className="space-y-4">
+            <div id="evidence-panel-bundles" role="tabpanel" aria-label="Evidence Bundles" className="space-y-4">
               {!tenantId && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
                   <>
@@ -215,35 +246,48 @@ export function EvidenceDrawer({
 
               {bundlesQuery.data && bundlesQuery.data.content.length === 0 && (
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-                  <Package className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-4 text-sm text-gray-600">No evidence bundles found</p>
+                  <Package className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
+                  <p className="mt-4 text-sm font-medium text-gray-700">No evidence bundles found</p>
+                  <p className="mt-1 text-xs text-gray-500">No data for this tenant yet — bundles are created when evidence is collected.</p>
                 </div>
               )}
 
               {bundlesQuery.data && bundlesQuery.data.content.length > 0 && (
                 <>
                   <div className="space-y-3">
-                    {bundlesQuery.data.content.map(bundle => (
-                      <div
-                        key={bundle.bundleId}
-                        className="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-gray-400" />
-                              <span className="font-medium text-gray-900">{bundle.type}</span>
-                            </div>
-                            <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
-                              <span className="rounded bg-gray-100 px-2 py-1">{bundle.status}</span>
-                              <span>
-                                {formatDistanceToNow(new Date(bundle.createdAt), { addSuffix: true })}
-                              </span>
+                    {bundlesQuery.data.content.map(bundle => {
+                      const statusColor =
+                        bundle.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                        bundle.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                        bundle.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-700';
+                      return (
+                        <div
+                          key={bundle.bundleId}
+                          className="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+                                <span className="font-medium text-gray-900 truncate">{bundle.type}</span>
+                              </div>
+                              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                                <span className={`rounded-full px-2 py-0.5 font-medium ${statusColor}`}>
+                                  {bundle.status}
+                                </span>
+                                <span className="text-gray-500">
+                                  {formatDistanceToNow(new Date(bundle.createdAt), { addSuffix: true })}
+                                </span>
+                              </div>
+                              <p className="mt-1.5 text-xs font-mono text-gray-400 truncate" title={bundle.bundleId}>
+                                ID: {bundle.bundleId}
+                              </p>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Pagination */}
@@ -278,7 +322,7 @@ export function EvidenceDrawer({
           )}
 
           {activeTab === 'audit' && (
-            <>
+            <div id="evidence-panel-audit" role="tabpanel" aria-label="Audit Timeline">
               {auditQuery.data && (
                 <AuditTimeline
                   events={auditQuery.data.content}
@@ -289,24 +333,38 @@ export function EvidenceDrawer({
                   pageSize={pageSize}
                   totalElements={auditQuery.data.totalElements}
                   onPageChange={setAuditPage}
-                  emptyMessage="No audit events found for this context"
+                  emptyMessage="No audit events found — try a different object context or check service availability."
                 />
               )}
               {!auditQuery.data && auditQuery.isLoading && (
-                <div className="text-sm text-gray-500">Loading audit timeline...</div>
+                <div className="text-sm text-gray-500">Loading audit timeline…</div>
               )}
               {auditQuery.error && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
                   <p className="font-medium">Failed to load audit timeline</p>
-                  <p className="mt-1 text-red-700">{auditQuery.error.message}</p>
-                  {auditQuery.error.message.includes('403') && (
+                  <p className="mt-1 text-red-700">{(auditQuery.error as Error).message}</p>
+                  {(auditQuery.error as Error).message?.includes('403') && (
                     <p className="mt-2 text-xs text-red-600">
                       You may not have the required TENANT_ADMIN permission to view audit events.
                     </p>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => auditQuery.refetch()}
+                    className="mt-3 rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-800 hover:bg-red-200"
+                  >
+                    Retry
+                  </button>
                 </div>
               )}
-            </>
+              {!auditQuery.data && !auditQuery.isLoading && !auditQuery.error && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
+                  <Activity className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
+                  <p className="mt-4 text-sm font-medium text-gray-700">Audit Timeline</p>
+                  <p className="mt-1 text-xs text-gray-500">Not available in current backend — audit service integration pending.</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { majorityCheck, type MajorityCheckResponse } from '@/lib/api/children';
+import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 
 export default function MajorityPage() {
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [childId, setChildId] = useState('');
   const [evaluationDate, setEvaluationDate] = useState('');
   const [result, setResult] = useState<MajorityCheckResponse | null>(null);
@@ -34,12 +36,22 @@ export default function MajorityPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Majority Transition Check</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Run a majority transition check for a child. Determines whether the child has reached
-          legal majority and triggers any configured status transitions.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Majority Transition Check</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Run a majority transition check for a child. Determines whether the child has reached
+            legal majority and triggers any configured status transitions.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEvidenceOpen(true)}
+          className="rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+          aria-label="Open evidence and audit drawer"
+        >
+          🔍 Evidence / Audit
+        </button>
       </div>
 
       {/* Info */}
@@ -158,6 +170,13 @@ export default function MajorityPage() {
           <li>• <code className="text-xs">transitionStatus</code> reflects any downstream state changes triggered</li>
         </ul>
       </div>
+
+      <EvidenceDrawer
+        isOpen={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        objectType="CHILD_MAJORITY_CHECK"
+        title="Majority Check — Evidence & Audit"
+      />
     </div>
   );
 }
