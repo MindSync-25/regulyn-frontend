@@ -205,6 +205,22 @@ export const navigationConfig: NavItem[] = [
     icon: 'Settings',
     allowedRoles: [ROLES.TENANT_ADMIN],
   },
+  {
+    label: 'HR & Workflows',
+    path: '/hr',
+    icon: 'Users',
+    allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.REVIEWER, ROLES.OPERATOR, ROLES.AUDITOR],
+    children: [
+      { label: 'Exit Workflows', path: '/hr/exits', allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.REVIEWER] },
+      { label: 'HR Document Rules', path: '/hr/rules', allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO] },
+      { label: 'Data Records', path: '/hr/access-logs', allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.AUDITOR] },
+      { label: 'Compliance Exports', path: '/hr/exports', allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO] },
+      { label: 'Nominees & Claims', path: '/hr/nominees', allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR] },
+      { label: 'Age Rules', path: '/hr/children/age-rules', allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO] },
+      { label: 'Guardian eSign', path: '/hr/children/esign', allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR] },
+      { label: 'Majority Check', path: '/hr/children/majority', allowedRoles: [ROLES.TENANT_ADMIN, ROLES.DPO] },
+    ],
+  },
 ];
 
 /**

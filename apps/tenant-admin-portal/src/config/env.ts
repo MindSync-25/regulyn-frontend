@@ -11,6 +11,9 @@ interface EnvConfig {
   ropaServiceUrl: string;
   vendorServiceUrl: string;
   scannerServiceUrl: string;
+  employeeServiceUrl: string;
+  nomineeServiceUrl: string;
+  childrenServiceUrl: string;
   appName: string;
   isDevelopment: boolean;
   isProduction: boolean;
@@ -50,6 +53,9 @@ export const env: EnvConfig = {
   ropaServiceUrl: getOptionalEnv('VITE_ROPA_SERVICE_URL', 'http://localhost:8085'),
   vendorServiceUrl: getOptionalEnv('VITE_VENDOR_SERVICE_URL', 'http://localhost:8090'),
   scannerServiceUrl: getOptionalEnv('VITE_SCANNER_SERVICE_URL', 'http://localhost:8094'),
+  employeeServiceUrl: getOptionalEnv('VITE_EMPLOYEE_SERVICE_URL', 'http://localhost:8091'),
+  nomineeServiceUrl: getOptionalEnv('VITE_NOMINEE_SERVICE_URL', 'http://localhost:8088'),
+  childrenServiceUrl: getOptionalEnv('VITE_CHILDREN_SERVICE_URL', 'http://localhost:8089'),
   appName: getOptionalEnv('VITE_APP_NAME', 'Regulyn Tenant Admin Portal'),
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,

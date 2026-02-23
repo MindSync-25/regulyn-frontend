@@ -39,6 +39,16 @@ import { SharingLogsPage } from '@/pages/governance/SharingLogsPage';
 import { ScanSourcesPage } from '@/pages/governance/ScanSourcesPage';
 import { ScanRunsPage } from '@/pages/governance/ScanRunsPage';
 import { ScanRunDetailPage } from '@/pages/governance/ScanRunDetailPage';
+// HR & Special Workflows
+import HRRulesPage from '@/pages/hr/HRRulesPage';
+import HRExitsPage from '@/pages/hr/HRExitsPage';
+import HRAccessLogsPage from '@/pages/hr/HRAccessLogsPage';
+import HRExportsPage from '@/pages/hr/HRExportsPage';
+import NomineesPage from '@/pages/hr/NomineesPage';
+import NomineeDetailPage from '@/pages/hr/NomineeDetailPage';
+import AgeRulesPage from '@/pages/hr/children/AgeRulesPage';
+import ESignPage from '@/pages/hr/children/ESignPage';
+import MajorityPage from '@/pages/hr/children/MajorityPage';
 
 /**
  * Application router configuration
@@ -482,7 +492,93 @@ export const router = createBrowserRouter([
           </RoleGuard>
         ),
       },
-      
+
+      // HR & Special Workflows
+      {
+        path: 'hr',
+        children: [
+          { index: true, element: <Navigate to="/hr/exits" replace /> },
+          {
+            path: 'rules',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO]}>
+                <HRRulesPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'exits',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.REVIEWER]}>
+                <HRExitsPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'access-logs',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.AUDITOR]}>
+                <HRAccessLogsPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'exports',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO]}>
+                <HRExportsPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'nominees',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR]}>
+                <NomineesPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'nominees/:claimId',
+            element: (
+              <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR]}>
+                <NomineeDetailPage />
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'children',
+            children: [
+              { index: true, element: <Navigate to="/hr/children/age-rules" replace /> },
+              {
+                path: 'age-rules',
+                element: (
+                  <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO]}>
+                    <AgeRulesPage />
+                  </RoleGuard>
+                ),
+              },
+              {
+                path: 'esign',
+                element: (
+                  <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO, ROLES.OPERATOR]}>
+                    <ESignPage />
+                  </RoleGuard>
+                ),
+              },
+              {
+                path: 'majority',
+                element: (
+                  <RoleGuard allowedRoles={[ROLES.TENANT_ADMIN, ROLES.DPO]}>
+                    <MajorityPage />
+                  </RoleGuard>
+                ),
+              },
+            ],
+          },
+        ],
+      },
+
       // Forbidden page
       {
         path: 'forbidden',
