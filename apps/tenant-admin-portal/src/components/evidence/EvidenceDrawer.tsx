@@ -17,9 +17,9 @@ import { formatDistanceToNow } from 'date-fns';
 interface EvidenceDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  objectType?: string; // Future use: filter by object type
-  objectId?: string;   // Future use: filter by object ID
-  bundleId?: string;   // Future use: pre-select bundle tab
+  objectType?: string; // Filter evidence bundles by object type (e.g. 'DSAR', 'INCIDENT')
+  objectId?: string;   // Filter evidence bundles by object ID (UUID string)
+  bundleId?: string;   // Pre-select bundle tab by bundle ID
   title?: string;
 }
 
@@ -63,7 +63,7 @@ export function EvidenceDrawer({
   const bundlesQuery = useQuery({
     queryKey: ['evidence-bundles', tenantId, bundlesPage, pageSize, objectType, objectId],
     queryFn: () => {
-      return listBundles({ tenantId: requireTenantId(tenantId), page: bundlesPage, size: pageSize });
+      return listBundles({ tenantId: requireTenantId(tenantId), page: bundlesPage, size: pageSize, objectType, objectId });
     },
     enabled: isOpen && activeTab === 'bundles' && !!tenantId,
   });

@@ -74,6 +74,8 @@ export interface EvidenceBundleSummary {
   type: string;
   createdAt: string; // ISO 8601
   status: string;
+  referenceType?: string;
+  referenceId?: string;
 }
 
 export interface EvidenceBundlePageResponse {
@@ -152,16 +154,20 @@ export async function listBundles(params: {
   tenantId: string;
   page?: number;
   size?: number;
+  objectType?: string;
+  objectId?: string;
 }): Promise<EvidenceBundlePageResponse> {
-  const { tenantId, page = 0, size = 20 } = params;
+  const { tenantId, page = 0, size = 20, objectType, objectId } = params;
 
   if (!tenantId || tenantId.trim().length === 0) {
     throw new Error('TENANT_CONTEXT_REQUIRED');
   }
-  
-  return evidenceRequest<EvidenceBundlePageResponse>(
-    `/admin/tenants/${tenantId}/evidence/bundles?page=${page}&size=${size}`
-  );
+
+  let url = `/admin/tenants/${tenantId}/evidence/bundles?page=${page}&size=${size}`;
+  if (objectType) url += `&referenceType=${encodeURIComponent(objectType)}`;
+  if (objectId) url += `&referenceId=${encodeURIComponent(objectId)}`;
+
+  return evidenceRequest<EvidenceBundlePageResponse>(url);
 }
 
 /**

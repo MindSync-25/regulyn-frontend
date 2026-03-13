@@ -157,7 +157,7 @@ export function PurposesHistoryPage() {
               <div className="border-t border-gray-100 bg-gray-50 px-5 py-4">
                 <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Version History</div>
                 <ol className="relative border-l border-gray-200 space-y-4 ml-2">
-                  {versions.map((pv, idx) => (
+                  {versions.map((pv: any, idx: number) => (
                     <li key={pv.purposeVersionId} className="ml-4">
                       <div className={`absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border-2 border-white ${
                         idx === 0 ? 'bg-green-500' : 'bg-gray-300'
